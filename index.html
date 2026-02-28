@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StringKit</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0d0d14;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid #1e1e2e;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+header h1 { font-size: 1.4rem; font-weight: 700; color: #a78bfa; letter-spacing: 0.04em; }
+header p  { font-size: 0.75rem; color: #475569; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  padding: 0 2rem;
+  border-bottom: 1px solid #1e1e2e;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  padding: 0.75rem 1.2rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover  { color: #cbd5e1; }
+.tab-btn.active { color: #a78bfa; border-bottom-color: #a78bfa; }
+
+/* ── Main layout ── */
+main {
+  padding: 1.75rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Form elements ── */
+.field-label {
+  font-size: 0.7rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.4rem;
+}
+
+textarea {
+  width: 100%;
+  height: 150px;
+  background: #13131f;
+  border: 1px solid #1e1e2e;
+  border-radius: 8px;
+  color: #e2e8f0;
+  padding: 0.875rem 1rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+  line-height: 1.6;
+}
+textarea:focus { border-color: #7c3aed; }
+textarea::placeholder { color: #334155; }
+textarea[readonly] { background: #0f0f1a; cursor: default; }
+
+/* ── Button row ── */
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.625rem 0;
+}
+
+/* Case grid */
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 0.5rem;
+  margin: 0.625rem 0;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.45rem 1.1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.825rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: #6d28d9;
+  color: #fff;
+}
+.btn-primary:hover { background: #5b21b6; }
+
+.btn-sub {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #2d3748;
+}
+.btn-sub:hover { background: #263345; color: #e2e8f0; }
+
+.btn-ghost {
+  background: transparent;
+  color: #475569;
+  border: 1px solid #1e293b;
+}
+.btn-ghost:hover { color: #94a3b8; border-color: #334155; }
+
+/* ── Output wrapper ── */
+.output-wrap { position: relative; }
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.2rem 0.65rem;
+  background: #1e293b;
+  border: 1px solid #2d3748;
+  border-radius: 4px;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: color 0.15s, border-color 0.15s;
+}
+.copy-btn:hover         { color: #cbd5e1; }
+.copy-btn.copied        { color: #34d399; border-color: #34d399; }
+
+/* ── Error / note text ── */
+.err-line  { min-height: 1.3em; font-size: 0.78rem; color: #f87171; margin: 0.3rem 0; }
+.note-line { font-size: 0.75rem; color: #475569; margin: 0.35rem 0; }
+
+/* ── Section divider ── */
+.divider { border: none; border-top: 1px solid #1e1e2e; margin: 0.75rem 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>StringKit</h1>
+  <p>ブラウザ完結型テキスト変換ツール — 外部通信なし</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="switchTab('base64', this)">Base64</button>
+  <button class="tab-btn"        onclick="switchTab('url',    this)">URL</button>
+  <button class="tab-btn"        onclick="switchTab('html',   this)">HTML Entity</button>
+  <button class="tab-btn"        onclick="switchTab('unicode',this)">Unicode</button>
+  <button class="tab-btn"        onclick="switchTab('hash',   this)">Hash</button>
+  <button class="tab-btn"        onclick="switchTab('case',   this)">Case</button>
+</nav>
+
+<main>
+
+  <!-- ═══════════ Base64 ═══════════ -->
+  <div id="panel-base64" class="tab-panel active">
+    <div class="field-label">入力</div>
+    <textarea id="base64-in" placeholder="テキストまたは Base64 文字列を貼り付け…"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="base64Encode()">Encode →</button>
+      <button class="btn btn-primary" onclick="base64Decode()">← Decode</button>
+      <button class="btn btn-sub"     onclick="swap('base64')">↑↓ Swap</button>
+      <button class="btn btn-ghost"   onclick="clear_('base64')">Clear</button>
+    </div>
+    <div class="err-line" id="base64-err"></div>
+    <div class="field-label">出力</div>
+    <div class="output-wrap">
+      <textarea id="base64-out" readonly placeholder="結果がここに表示されます…"></textarea>
+      <button class="copy-btn" onclick="copyOut('base64')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ URL ═══════════ -->
+  <div id="panel-url" class="tab-panel">
+    <div class="field-label">入力</div>
+    <textarea id="url-in" placeholder="テキストまたは URL エンコード済み文字列を貼り付け…"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="urlEncode()">Encode →</button>
+      <button class="btn btn-primary" onclick="urlDecode()">← Decode</button>
+      <button class="btn btn-sub"     onclick="swap('url')">↑↓ Swap</button>
+      <button class="btn btn-ghost"   onclick="clear_('url')">Clear</button>
+    </div>
+    <div class="err-line" id="url-err"></div>
+    <div class="field-label">出力</div>
+    <div class="output-wrap">
+      <textarea id="url-out" readonly placeholder="結果がここに表示されます…"></textarea>
+      <button class="copy-btn" onclick="copyOut('url')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ HTML Entity ═══════════ -->
+  <div id="panel-html" class="tab-panel">
+    <div class="field-label">入力</div>
+    <textarea id="html-in" placeholder="テキストまたは HTML エンティティ文字列を貼り付け…"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="htmlEncode()">Encode →</button>
+      <button class="btn btn-primary" onclick="htmlDecode()">← Decode</button>
+      <button class="btn btn-sub"     onclick="swap('html')">↑↓ Swap</button>
+      <button class="btn btn-ghost"   onclick="clear_('html')">Clear</button>
+    </div>
+    <div class="err-line" id="html-err"></div>
+    <div class="field-label">出力</div>
+    <div class="output-wrap">
+      <textarea id="html-out" readonly placeholder="結果がここに表示されます…"></textarea>
+      <button class="copy-btn" onclick="copyOut('html')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ Unicode ═══════════ -->
+  <div id="panel-unicode" class="tab-panel">
+    <div class="field-label">入力</div>
+    <textarea id="unicode-in" placeholder="テキストまたは \uXXXX / \u{XXXXX} 形式の文字列を貼り付け…"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="unicodeEscape()">Escape →</button>
+      <button class="btn btn-primary" onclick="unicodeUnescape()">← Unescape</button>
+      <button class="btn btn-sub"     onclick="swap('unicode')">↑↓ Swap</button>
+      <button class="btn btn-ghost"   onclick="clear_('unicode')">Clear</button>
+    </div>
+    <div class="err-line" id="unicode-err"></div>
+    <div class="field-label">出力</div>
+    <div class="output-wrap">
+      <textarea id="unicode-out" readonly placeholder="結果がここに表示されます…"></textarea>
+      <button class="copy-btn" onclick="copyOut('unicode')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ Hash ═══════════ -->
+  <div id="panel-hash" class="tab-panel">
+    <div class="field-label">入力</div>
+    <textarea id="hash-in" placeholder="ハッシュ化するテキストを貼り付け…"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="computeHash('SHA-1')">SHA-1</button>
+      <button class="btn btn-primary" onclick="computeHash('SHA-256')">SHA-256</button>
+      <button class="btn btn-primary" onclick="computeHash('SHA-384')">SHA-384</button>
+      <button class="btn btn-primary" onclick="computeHash('SHA-512')">SHA-512</button>
+      <button class="btn btn-ghost"   onclick="clear_('hash')">Clear</button>
+    </div>
+    <p class="note-line">※ ハッシュは一方向変換です（復元不可）</p>
+    <div class="err-line" id="hash-err"></div>
+    <div class="field-label">出力</div>
+    <div class="output-wrap">
+      <textarea id="hash-out" readonly placeholder="結果がここに表示されます…"></textarea>
+      <button class="copy-btn" onclick="copyOut('hash')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ Case ═══════════ -->
+  <div id="panel-case" class="tab-panel">
+    <div class="field-label">入力</div>
+    <textarea id="case-in" placeholder="テキストを貼り付け…"></textarea>
+    <div class="case-grid">
+      <button class="btn btn-primary" onclick="convertCase('upper')">UPPER CASE</button>
+      <button class="btn btn-primary" onclick="convertCase('lower')">lower case</button>
+      <button class="btn btn-primary" onclick="convertCase('title')">Title Case</button>
+      <button class="btn btn-primary" onclick="convertCase('sentence')">Sentence case</button>
+      <button class="btn btn-primary" onclick="convertCase('camel')">camelCase</button>
+      <button class="btn btn-primary" onclick="convertCase('pascal')">PascalCase</button>
+      <button class="btn btn-primary" onclick="convertCase('snake')">snake_case</button>
+      <button class="btn btn-primary" onclick="convertCase('kebab')">kebab-case</button>
+      <button class="btn btn-primary" onclick="convertCase('constant')">CONSTANT_CASE</button>
+      <button class="btn btn-ghost"   onclick="clear_('case')">Clear</button>
+    </div>
+    <div class="err-line" id="case-err"></div>
+    <div class="field-label">出力</div>
+    <div class="output-wrap">
+      <textarea id="case-out" readonly placeholder="結果がここに表示されます…"></textarea>
+      <button class="copy-btn" onclick="copyOut('case')">Copy</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════
+   Tab switching
+═══════════════════════════════════════════ */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ═══════════════════════════════════════════
+   Shared helpers
+═══════════════════════════════════════════ */
+function $in(ns)  { return document.getElementById(ns + '-in');  }
+function $out(ns) { return document.getElementById(ns + '-out'); }
+function $err(ns) { return document.getElementById(ns + '-err'); }
+
+function setOut(ns, val) {
+  $out(ns).value = val;
+  $err(ns).textContent = '';
+}
+function setErr(ns, msg) {
+  $out(ns).value = '';
+  $err(ns).textContent = msg;
+}
+
+function swap(ns) {
+  const a = $in(ns).value, b = $out(ns).value;
+  $in(ns).value  = b;
+  $out(ns).value = a;
+  $err(ns).textContent = '';
+}
+
+function clear_(ns) {
+  $in(ns).value  = '';
+  $out(ns).value = '';
+  $err(ns).textContent = '';
+}
+
+function copyOut(ns) {
+  const val = $out(ns).value;
+  if (!val) return;
+  const btn = document.querySelector('#panel-' + ns + ' .copy-btn');
+  const done = () => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(val).then(done).catch(() => fallbackCopy(ns, done));
+  } else {
+    fallbackCopy(ns, done);
+  }
+}
+function fallbackCopy(ns, cb) {
+  const ta = $out(ns);
+  ta.removeAttribute('readonly');
+  ta.select();
+  try { document.execCommand('copy'); } catch (_) {}
+  ta.setAttribute('readonly', '');
+  cb();
+}
+
+/* ═══════════════════════════════════════════
+   Base64  (Unicode-safe via TextEncoder)
+═══════════════════════════════════════════ */
+function base64Encode() {
+  const input = $in('base64').value;
+  try {
+    const bytes  = new TextEncoder().encode(input);
+    const binary = Array.from(bytes, b => String.fromCharCode(b)).join('');
+    setOut('base64', btoa(binary));
+  } catch (e) {
+    setErr('base64', 'エンコード失敗: ' + e.message);
+  }
+}
+
+function base64Decode() {
+  const input = $in('base64').value.trim();
+  try {
+    const binary = atob(input);
+    const bytes  = Uint8Array.from(binary, c => c.charCodeAt(0));
+    setOut('base64', new TextDecoder().decode(bytes));
+  } catch (_) {
+    setErr('base64', '無効な Base64 文字列です');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   URL encode / decode
+═══════════════════════════════════════════ */
+function urlEncode() {
+  try {
+    setOut('url', encodeURIComponent($in('url').value));
+  } catch (e) {
+    setErr('url', 'エンコード失敗: ' + e.message);
+  }
+}
+
+function urlDecode() {
+  try {
+    setOut('url', decodeURIComponent($in('url').value));
+  } catch (_) {
+    setErr('url', '無効な URL エンコード文字列です');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   HTML Entity encode / decode  (DOM trick — XSS safe)
+═══════════════════════════════════════════ */
+function htmlEncode() {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode($in('html').value));
+  setOut('html', div.innerHTML);
+}
+
+function htmlDecode() {
+  const div = document.createElement('div');
+  div.innerHTML = $in('html').value;
+  setOut('html', div.textContent);
+}
+
+/* ═══════════════════════════════════════════
+   Unicode escape / unescape
+   Escape: non-printable / non-ASCII → \uXXXX or \u{XXXXX}
+   Unescape: \uXXXX and \u{XXXXX} → characters
+═══════════════════════════════════════════ */
+function unicodeEscape() {
+  const result = Array.from($in('unicode').value).map(ch => {
+    const cp = ch.codePointAt(0);
+    if (cp > 0xFFFF) {
+      return '\\u{' + cp.toString(16).toUpperCase() + '}';
+    }
+    if (cp < 0x20 || cp > 0x7E) {
+      return '\\u' + cp.toString(16).toUpperCase().padStart(4, '0');
+    }
+    return ch;
+  }).join('');
+  setOut('unicode', result);
+}
+
+function unicodeUnescape() {
+  try {
+    const result = $in('unicode').value
+      .replace(/\\u\{([0-9A-Fa-f]+)\}/g,
+        (_, h) => String.fromCodePoint(parseInt(h, 16)))
+      .replace(/\\u([0-9A-Fa-f]{4})/g,
+        (_, h) => String.fromCharCode(parseInt(h, 16)));
+    setOut('unicode', result);
+  } catch (_) {
+    setErr('unicode', '無効な Unicode エスケープシーケンスです');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Hash  (Web Crypto API — ブラウザ組み込み)
+═══════════════════════════════════════════ */
+async function computeHash(algo) {
+  const input = $in('hash').value;
+  try {
+    const buf = await crypto.subtle.digest(algo, new TextEncoder().encode(input));
+    const hex = Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+    setOut('hash', hex);
+  } catch (e) {
+    setErr('hash', 'ハッシュ計算失敗: ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Case conversion
+═══════════════════════════════════════════ */
+
+/** テキストを単語配列に分割（camelCase / PascalCase / snake / kebab 対応） */
+function splitWords(str) {
+  return str
+    .replace(/([a-z\xC0-\xFF])([A-Z\xC0-\xFF])/g, '$1 $2')  // camelCase 境界
+    .replace(/([A-Z\xC0-\xFF]+)([A-Z\xC0-\xFF][a-z\xC0-\xFF])/g, '$1 $2')
+    .replace(/[-_]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function convertCase(type) {
+  const input = $in('case').value;
+  const words = splitWords(input);
+  if (!words.length) { setOut('case', ''); return; }
+
+  const cap  = w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  const low  = w => w.toLowerCase();
+  const up   = w => w.toUpperCase();
+
+  let result;
+  switch (type) {
+    case 'upper':    result = input.toUpperCase(); break;
+    case 'lower':    result = input.toLowerCase(); break;
+    case 'title':    result = words.map(cap).join(' '); break;
+    case 'sentence': result = words.map(low).join(' ');
+                     result = result.charAt(0).toUpperCase() + result.slice(1); break;
+    case 'camel':    result = words.map((w, i) => i === 0 ? low(w) : cap(w)).join(''); break;
+    case 'pascal':   result = words.map(cap).join(''); break;
+    case 'snake':    result = words.map(low).join('_'); break;
+    case 'kebab':    result = words.map(low).join('-'); break;
+    case 'constant': result = words.map(up).join('_'); break;
+    default:         result = input;
+  }
+  setOut('case', result);
+}
+</script>
+</body>
+</html>
