@@ -14,6 +14,7 @@
 ```
 index.html をブラウザで開くだけ
 ```
+https://sougyo.github.io/StringKit/
 
 1. 上部のタブで変換カテゴリを選択する
 2. 入力欄にテキストを貼り付ける
