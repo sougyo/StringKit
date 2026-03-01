@@ -9,29 +9,31 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #0d0d14;
-  color: #e2e8f0;
+  background: #f5f7fa;
+  color: #1f2937;
   min-height: 100vh;
 }
 
 /* ── Header ── */
 header {
   padding: 1.25rem 2rem;
-  border-bottom: 1px solid #1e1e2e;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: baseline;
   gap: 1rem;
+  background: #ffffff;
 }
-header h1 { font-size: 1.4rem; font-weight: 700; color: #a78bfa; letter-spacing: 0.04em; }
-header p  { font-size: 0.75rem; color: #475569; }
+header h1 { font-size: 1.4rem; font-weight: 700; color: #6d28d9; letter-spacing: 0.04em; }
+header p  { font-size: 0.75rem; color: #9ca3af; }
 
 /* ── Tabs ── */
 .tabs {
   display: flex;
   padding: 0 2rem;
-  border-bottom: 1px solid #1e1e2e;
+  border-bottom: 1px solid #e5e7eb;
   overflow-x: auto;
   scrollbar-width: none;
+  background: #ffffff;
 }
 .tabs::-webkit-scrollbar { display: none; }
 
@@ -40,14 +42,14 @@ header p  { font-size: 0.75rem; color: #475569; }
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #64748b;
+  color: #6b7280;
   cursor: pointer;
   font-size: 0.875rem;
   white-space: nowrap;
   transition: color 0.15s, border-color 0.15s;
 }
-.tab-btn:hover  { color: #cbd5e1; }
-.tab-btn.active { color: #a78bfa; border-bottom-color: #a78bfa; }
+.tab-btn:hover  { color: #374151; }
+.tab-btn.active { color: #6d28d9; border-bottom-color: #6d28d9; }
 
 /* ── Main layout ── */
 main {
@@ -62,7 +64,7 @@ main {
 /* ── Form elements ── */
 .field-label {
   font-size: 0.7rem;
-  color: #475569;
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   margin-bottom: 0.4rem;
@@ -71,10 +73,10 @@ main {
 textarea {
   width: 100%;
   height: 150px;
-  background: #13131f;
-  border: 1px solid #1e1e2e;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: #e2e8f0;
+  color: #1f2937;
   padding: 0.875rem 1rem;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.85rem;
@@ -84,8 +86,8 @@ textarea {
   line-height: 1.6;
 }
 textarea:focus { border-color: #7c3aed; }
-textarea::placeholder { color: #334155; }
-textarea[readonly] { background: #0f0f1a; cursor: default; }
+textarea::placeholder { color: #9ca3af; }
+textarea[readonly] { background: #f9fafb; cursor: default; }
 
 /* ── Button row ── */
 .btn-row {
@@ -121,18 +123,18 @@ textarea[readonly] { background: #0f0f1a; cursor: default; }
 .btn-primary:hover { background: #5b21b6; }
 
 .btn-sub {
-  background: #1e293b;
-  color: #94a3b8;
-  border: 1px solid #2d3748;
+  background: #e5e7eb;
+  color: #374151;
+  border: 1px solid #d1d5db;
 }
-.btn-sub:hover { background: #263345; color: #e2e8f0; }
+.btn-sub:hover { background: #d1d5db; color: #111827; }
 
 .btn-ghost {
   background: transparent;
-  color: #475569;
-  border: 1px solid #1e293b;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
 }
-.btn-ghost:hover { color: #94a3b8; border-color: #334155; }
+.btn-ghost:hover { color: #374151; border-color: #9ca3af; }
 
 /* ── Output wrapper ── */
 .output-wrap { position: relative; }
@@ -142,23 +144,23 @@ textarea[readonly] { background: #0f0f1a; cursor: default; }
   top: 0.5rem;
   right: 0.5rem;
   padding: 0.2rem 0.65rem;
-  background: #1e293b;
-  border: 1px solid #2d3748;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
   border-radius: 4px;
-  color: #64748b;
+  color: #6b7280;
   cursor: pointer;
   font-size: 0.72rem;
   transition: color 0.15s, border-color 0.15s;
 }
-.copy-btn:hover         { color: #cbd5e1; }
-.copy-btn.copied        { color: #34d399; border-color: #34d399; }
+.copy-btn:hover         { color: #374151; }
+.copy-btn.copied        { color: #059669; border-color: #059669; }
 
 /* ── Error / note text ── */
-.err-line  { min-height: 1.3em; font-size: 0.78rem; color: #f87171; margin: 0.3rem 0; }
-.note-line { font-size: 0.75rem; color: #475569; margin: 0.35rem 0; }
+.err-line  { min-height: 1.3em; font-size: 0.78rem; color: #dc2626; margin: 0.3rem 0; }
+.note-line { font-size: 0.75rem; color: #9ca3af; margin: 0.35rem 0; }
 
 /* ── Section divider ── */
-.divider { border: none; border-top: 1px solid #1e1e2e; margin: 0.75rem 0; }
+.divider { border: none; border-top: 1px solid #e5e7eb; margin: 0.75rem 0; }
 </style>
 </head>
 <body>
