@@ -161,6 +161,140 @@ textarea[readonly] { background: #f9fafb; cursor: default; }
 
 /* ── Section divider ── */
 .divider { border: none; border-top: 1px solid #e5e7eb; margin: 0.75rem 0; }
+
+/* ── Diff tab ── */
+.diff-input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.diff-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.diff-badge-old { background: #fee2e2; color: #b91c1c; }
+.diff-badge-new { background: #dcfce7; color: #15803d; }
+
+.diff-view-toggle {
+  margin-left: auto;
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.diff-vbtn {
+  padding: 0.35rem 0.9rem;
+  background: #fff;
+  border: none;
+  border-radius: 0;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.diff-vbtn.active { background: #6d28d9; color: #fff; }
+.diff-vbtn:hover:not(.active) { background: #f3f4f6; }
+
+.diff-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  margin: 0.5rem 0;
+}
+.diff-stat-add { color: #15803d; font-weight: 600; }
+.diff-stat-del { color: #b91c1c; font-weight: 600; }
+.diff-stat-eq  { color: #6b7280; font-weight: 600; }
+
+.diff-output {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+.diff-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #9ca3af;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.unified-table { width: 100%; border-collapse: collapse; }
+.unified-table tr { border-bottom: 1px solid #f0f0f0; }
+.unified-table tr:last-child { border-bottom: none; }
+
+.split-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.split-table tr { border-bottom: 1px solid #f0f0f0; }
+.split-table tr:last-child { border-bottom: none; }
+.split-table .split-divider { width: 1px; background: #e5e7eb; padding: 0; }
+
+.line-num {
+  user-select: none;
+  min-width: 36px;
+  width: 36px;
+  padding: 2px 6px;
+  text-align: right;
+  color: #9ca3af;
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  font-size: 0.7rem;
+  vertical-align: top;
+}
+.line-sign {
+  user-select: none;
+  width: 20px;
+  text-align: center;
+  font-weight: 700;
+  padding: 2px 3px;
+  vertical-align: top;
+}
+.line-content {
+  padding: 2px 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  vertical-align: top;
+  width: 100%;
+}
+
+tr.add .line-num    { background: #dcfce7; }
+tr.add .line-sign   { color: #15803d; background: #dcfce7; }
+tr.add .line-content { background: #f0fdf4; }
+tr.del .line-num    { background: #fee2e2; }
+tr.del .line-sign   { color: #b91c1c; background: #fee2e2; }
+tr.del .line-content { background: #fff5f5; }
+tr.ctx .line-sign   { color: #d1d5db; }
+
+.char-add { background: #86efac; border-radius: 2px; }
+.char-del { background: #fca5a5; border-radius: 2px; text-decoration: line-through; }
+
+td.left-del  { background: #fff5f5; }
+td.left-del .line-num  { background: #fee2e2; }
+td.right-add { background: #f0fdf4; }
+td.right-add .line-num { background: #dcfce7; }
+
+tr.hunk-sep td {
+  background: #f3f4f6;
+  color: #6b7280;
+  text-align: center;
+  padding: 3px;
+  font-size: 0.72rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+@media (max-width: 600px) {
+  .diff-input-grid { grid-template-columns: 1fr; }
+  .diff-view-toggle { margin-left: 0; }
+}
 </style>
 </head>
 <body>
@@ -177,6 +311,7 @@ textarea[readonly] { background: #f9fafb; cursor: default; }
   <button class="tab-btn"        onclick="switchTab('unicode',this)">Unicode</button>
   <button class="tab-btn"        onclick="switchTab('hash',   this)">Hash</button>
   <button class="tab-btn"        onclick="switchTab('case',   this)">Case</button>
+  <button class="tab-btn"        onclick="switchTab('diff',   this)">Diff</button>
 </nav>
 
 <main>
@@ -294,6 +429,32 @@ textarea[readonly] { background: #f9fafb; cursor: default; }
     <div class="output-wrap">
       <textarea id="case-out" readonly placeholder="結果がここに表示されます…"></textarea>
       <button class="copy-btn" onclick="copyOut('case')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ Diff ═══════════ -->
+  <div id="panel-diff" class="tab-panel">
+    <div class="diff-input-grid">
+      <div>
+        <div class="field-label"><span class="diff-badge diff-badge-old">変更前</span> Original</div>
+        <textarea id="diff-textA" placeholder="変更前のテキストを入力" style="height:180px"></textarea>
+      </div>
+      <div>
+        <div class="field-label"><span class="diff-badge diff-badge-new">変更後</span> Modified</div>
+        <textarea id="diff-textB" placeholder="変更後のテキストを入力" style="height:180px"></textarea>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:0.625rem">
+      <button class="btn btn-ghost" onclick="diffClearAll()">Clear</button>
+      <button class="btn btn-sub"   onclick="diffSwap()">↑↓ Swap</button>
+      <div class="diff-view-toggle">
+        <button id="diff-btnUnified" class="diff-vbtn active" onclick="diffSetView('unified')">統合</button>
+        <button id="diff-btnSplit"   class="diff-vbtn"        onclick="diffSetView('split')">分割</button>
+      </div>
+    </div>
+    <div class="diff-stats" id="diff-stats" style="display:none"></div>
+    <div class="diff-output" id="diff-output">
+      <div class="diff-empty">テキストを入力すると差分がリアルタイムで表示されます</div>
     </div>
   </div>
 
@@ -485,6 +646,248 @@ function splitWords(str) {
     .filter(Boolean);
 }
 
+/* ═══════════════════════════════════════════
+   Diff  (LCS-based line & char diff)
+═══════════════════════════════════════════ */
+function diffLines(aLines, bLines) {
+  const m = aLines.length, n = bLines.length;
+  const dp = Array.from({length: m + 1}, () => new Uint32Array(n + 1));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = aLines[i-1] === bLines[j-1]
+        ? dp[i-1][j-1] + 1
+        : Math.max(dp[i-1][j], dp[i][j-1]);
+  const ops = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && aLines[i-1] === bLines[j-1]) {
+      ops.push({type: 'eq', a: aLines[i-1], b: bLines[j-1]}); i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      ops.push({type: 'ins', b: bLines[j-1]}); j--;
+    } else {
+      ops.push({type: 'del', a: aLines[i-1]}); i--;
+    }
+  }
+  return ops.reverse();
+}
+
+function diffChars(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0 && n === 0) return {aHtml: '', bHtml: ''};
+  const dp = Array.from({length: m + 1}, () => new Uint16Array(n + 1));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1]
+        ? dp[i-1][j-1] + 1
+        : Math.max(dp[i-1][j], dp[i][j-1]);
+  const aParts = [], bParts = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i-1] === b[j-1]) {
+      aParts.push({type: 'eq', ch: a[i-1]}); bParts.push({type: 'eq', ch: b[j-1]}); i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      bParts.push({type: 'ins', ch: b[j-1]}); j--;
+    } else {
+      aParts.push({type: 'del', ch: a[i-1]}); i--;
+    }
+  }
+  aParts.reverse(); bParts.reverse();
+  const render = (parts, insClass, delClass) => {
+    let html = '', k = 0;
+    while (k < parts.length) {
+      const {type, ch} = parts[k];
+      if (type === 'eq') { html += diffEsc(ch); k++; continue; }
+      let run = '';
+      while (k < parts.length && parts[k].type === type) { run += parts[k].ch; k++; }
+      html += `<span class="${type === 'ins' ? insClass : delClass}">${diffEsc(run)}</span>`;
+    }
+    return html;
+  };
+  return { aHtml: render(aParts, '', 'char-del'), bHtml: render(bParts, 'char-add', '') };
+}
+
+function diffEsc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+const DIFF_CTX = 3;
+function diffGroupOps(ops) {
+  const changed = ops.map(o => o.type !== 'eq');
+  const show = new Array(ops.length).fill(false);
+  for (let i = 0; i < ops.length; i++) {
+    if (!changed[i]) continue;
+    for (let d = -DIFF_CTX; d <= DIFF_CTX; d++) {
+      const k = i + d;
+      if (k >= 0 && k < ops.length) show[k] = true;
+    }
+  }
+  const groups = [];
+  let i = 0;
+  while (i < ops.length) {
+    if (show[i]) {
+      const start = i;
+      while (i < ops.length && show[i]) i++;
+      groups.push({type: 'show', ops: ops.slice(start, i)});
+    } else {
+      const start = i;
+      while (i < ops.length && !show[i]) i++;
+      groups.push({type: 'hide', count: i - start});
+    }
+  }
+  return groups;
+}
+
+let diffCurrentView = 'unified';
+
+function diffRender() {
+  const a = document.getElementById('diff-textA').value;
+  const b = document.getElementById('diff-textB').value;
+  const aLines = a === '' ? [] : a.split('\n');
+  const bLines = b === '' ? [] : b.split('\n');
+  const ops = diffLines(aLines, bLines);
+  const groups = diffGroupOps(ops);
+  const statsEl = document.getElementById('diff-stats');
+  const outEl   = document.getElementById('diff-output');
+
+  if (a === '' && b === '') {
+    statsEl.style.display = 'none';
+    outEl.innerHTML = '<div class="diff-empty">テキストを入力すると差分がリアルタイムで表示されます</div>';
+    return;
+  }
+
+  let adds = 0, dels = 0, eqs = 0;
+  ops.forEach(o => { if (o.type==='ins') adds++; else if (o.type==='del') dels++; else eqs++; });
+  statsEl.style.display = 'flex';
+  statsEl.innerHTML = `
+    <span><span class="diff-stat-add">+${adds}</span> 追加</span>
+    <span><span class="diff-stat-del">-${dels}</span> 削除</span>
+    <span><span class="diff-stat-eq">${eqs}</span> 変更なし</span>
+  `;
+
+  if (adds === 0 && dels === 0) {
+    outEl.innerHTML = '<div class="diff-empty" style="color:#15803d">&#10003; 差分はありません（2つのテキストは同一です）</div>';
+    return;
+  }
+
+  outEl.innerHTML = diffCurrentView === 'unified'
+    ? diffRenderUnified(groups)
+    : diffRenderSplit(groups);
+}
+
+function diffRenderUnified(groups) {
+  let html = '<table class="unified-table">';
+  let aNum = 0, bNum = 0;
+  for (const grp of groups) {
+    if (grp.type === 'hide') {
+      html += `<tr class="hunk-sep"><td colspan="4">… ${grp.count} 行省略 …</td></tr>`;
+      continue;
+    }
+    const ops = grp.ops;
+    let i = 0;
+    while (i < ops.length) {
+      const op = ops[i];
+      if (op.type === 'del' && i + 1 < ops.length && ops[i+1].type === 'ins') {
+        const {aHtml, bHtml} = diffChars(op.a, ops[i+1].b);
+        aNum++;
+        html += `<tr class="del"><td class="line-num">${aNum}</td><td class="line-num"></td><td class="line-sign">−</td><td class="line-content">${aHtml || '&nbsp;'}</td></tr>`;
+        bNum++;
+        html += `<tr class="add"><td class="line-num"></td><td class="line-num">${bNum}</td><td class="line-sign">+</td><td class="line-content">${bHtml || '&nbsp;'}</td></tr>`;
+        i += 2;
+      } else if (op.type === 'del') {
+        aNum++;
+        html += `<tr class="del"><td class="line-num">${aNum}</td><td class="line-num"></td><td class="line-sign">−</td><td class="line-content">${diffEsc(op.a) || '&nbsp;'}</td></tr>`;
+        i++;
+      } else if (op.type === 'ins') {
+        bNum++;
+        html += `<tr class="add"><td class="line-num"></td><td class="line-num">${bNum}</td><td class="line-sign">+</td><td class="line-content">${diffEsc(op.b) || '&nbsp;'}</td></tr>`;
+        i++;
+      } else {
+        aNum++; bNum++;
+        html += `<tr class="ctx"><td class="line-num">${aNum}</td><td class="line-num">${bNum}</td><td class="line-sign"> </td><td class="line-content">${diffEsc(op.a) || '&nbsp;'}</td></tr>`;
+        i++;
+      }
+    }
+  }
+  return html + '</table>';
+}
+
+function diffRenderSplit(groups) {
+  let html = '<table class="split-table">';
+  let aNum = 0, bNum = 0;
+  const lCell = (cls, num, content) =>
+    `<td class="${cls}"><div style="display:flex"><div class="line-num">${num}</div><div class="line-content">${content || '&nbsp;'}</div></div></td>`;
+  const rCell = lCell;
+  for (const grp of groups) {
+    if (grp.type === 'hide') {
+      html += `<tr class="hunk-sep"><td colspan="3">… ${grp.count} 行省略 …</td></tr>`;
+      continue;
+    }
+    const ops = grp.ops;
+    let i = 0;
+    while (i < ops.length) {
+      const op = ops[i];
+      if (op.type === 'del' || op.type === 'ins') {
+        const dels = [], inss = [];
+        while (i < ops.length && (ops[i].type === 'del' || ops[i].type === 'ins')) {
+          if (ops[i].type === 'del') dels.push(ops[i]); else inss.push(ops[i]);
+          i++;
+        }
+        const maxLen = Math.max(dels.length, inss.length);
+        for (let k = 0; k < maxLen; k++) {
+          const d = dels[k], ins = inss[k];
+          let lc = '', rc = '', ln = '', rn = '';
+          if (d && ins) {
+            const {aHtml, bHtml} = diffChars(d.a, ins.b);
+            aNum++; ln = aNum; lc = aHtml;
+            bNum++; rn = bNum; rc = bHtml;
+            html += `<tr>${lCell('left-del', ln, lc)}<td class="split-divider"></td>${rCell('right-add', rn, rc)}</tr>`;
+          } else if (d) {
+            aNum++; ln = aNum; lc = diffEsc(d.a);
+            html += `<tr>${lCell('left-del', ln, lc)}<td class="split-divider"></td>${rCell('', '', '')}</tr>`;
+          } else {
+            bNum++; rn = bNum; rc = diffEsc(ins.b);
+            html += `<tr>${lCell('', '', '')}<td class="split-divider"></td>${rCell('right-add', rn, rc)}</tr>`;
+          }
+        }
+      } else {
+        aNum++; bNum++;
+        const content = diffEsc(op.a);
+        html += `<tr>${lCell('ctx', aNum, content)}<td class="split-divider"></td>${rCell('ctx', bNum, content)}</tr>`;
+        i++;
+      }
+    }
+  }
+  return html + '</table>';
+}
+
+function diffSetView(v) {
+  diffCurrentView = v;
+  document.getElementById('diff-btnUnified').classList.toggle('active', v === 'unified');
+  document.getElementById('diff-btnSplit').classList.toggle('active', v === 'split');
+  diffRender();
+}
+
+function diffClearAll() {
+  document.getElementById('diff-textA').value = '';
+  document.getElementById('diff-textB').value = '';
+  diffRender();
+}
+
+function diffSwap() {
+  const a = document.getElementById('diff-textA');
+  const b = document.getElementById('diff-textB');
+  const tmp = a.value; a.value = b.value; b.value = tmp;
+  diffRender();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('diff-textA').addEventListener('input', diffRender);
+  document.getElementById('diff-textB').addEventListener('input', diffRender);
+});
+
+/* ═══════════════════════════════════════════
+   Case conversion
+═══════════════════════════════════════════ */
 function convertCase(type) {
   const input = $in('case').value;
   const words = splitWords(input);
