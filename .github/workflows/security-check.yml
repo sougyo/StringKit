@@ -1,0 +1,19 @@
+name: Security Check
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  static-security-analysis:
+    name: Static Security Analysis (no external data communication)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run static security checks
+        run: node tests/security-check.js
