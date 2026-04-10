@@ -687,10 +687,37 @@ function base64Decode() {
 
 /* ═══════════════════════════════════════════
    URL encode / decode
+   URL形式 (scheme://) を検出した場合は構造を保ちながらエンコード:
+     authority (scheme://host:port) → そのまま
+     path      → セグメント単位で encodeURIComponent
+     query     → key・value 単位で encodeURIComponent
+     fragment  → encodeURIComponent
+   それ以外の文字列は encodeURIComponent で全体エンコード
 ═══════════════════════════════════════════ */
 function urlEncode() {
+  const input = $in('url').value;
   try {
-    setOut('url', encodeURIComponent($in('url').value));
+    if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:\/\//.test(input)) {
+      const m = input.match(
+        /^([a-zA-Z][a-zA-Z0-9+\-.]*:\/\/[^/?#]*)([^?#]*)(\?[^#]*)?(#[\s\S]*)?$/
+      );
+      if (!m) throw new Error('URL の解析に失敗しました');
+
+      const authority = m[1]; // scheme://host — そのまま維持
+      const path = (m[2] || '').split('/').map(seg => encodeURIComponent(seg)).join('/');
+      let query = '';
+      if (m[3]) {
+        query = '?' + m[3].slice(1).split('&').map(pair => {
+          const eq = pair.indexOf('=');
+          if (eq === -1) return encodeURIComponent(pair);
+          return encodeURIComponent(pair.slice(0, eq)) + '=' + encodeURIComponent(pair.slice(eq + 1));
+        }).join('&');
+      }
+      const frag = m[4] ? '#' + encodeURIComponent(m[4].slice(1)) : '';
+      setOut('url', authority + path + query + frag);
+    } else {
+      setOut('url', encodeURIComponent(input));
+    }
   } catch (e) {
     setErr('url', 'エンコード失敗: ' + e.message);
   }
