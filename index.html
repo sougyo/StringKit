@@ -313,6 +313,7 @@ tr.hunk-sep td {
   <button class="tab-btn"        onclick="switchTab('case',   this)">Case</button>
   <button class="tab-btn"        onclick="switchTab('diff',   this)">Diff</button>
   <button class="tab-btn"        onclick="switchTab('time',   this)">Time</button>
+  <button class="tab-btn"        onclick="switchTab('radix',  this)">Radix</button>
 </nav>
 
 <main>
@@ -480,6 +481,45 @@ tr.hunk-sep td {
     <div class="output-wrap">
       <textarea id="time-out" readonly placeholder="結果がここに表示されます…"></textarea>
       <button class="copy-btn" onclick="copyOut('time')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ Radix ═══════════ -->
+  <div id="panel-radix" class="tab-panel">
+    <div class="field-label">入力</div>
+    <textarea id="radix-in" placeholder="数値を入力（複数行可）…"></textarea>
+    <div class="btn-row" style="align-items:center; gap:1rem; flex-wrap:wrap; margin:0.625rem 0;">
+      <div style="display:flex; align-items:center; gap:0.5rem;">
+        <label class="field-label" for="radix-from" style="margin:0; white-space:nowrap">入力</label>
+        <select id="radix-from" style="border:1px solid #d1d5db; border-radius:6px; padding:0.4rem 0.6rem; font-size:0.85rem; color:#1f2937; background:#fff; outline:none; cursor:pointer;">
+          <option value="2">2進数</option>
+          <option value="8">8進数</option>
+          <option value="10" selected>10進数</option>
+          <option value="16">16進数</option>
+        </select>
+      </div>
+      <span style="color:#9ca3af; font-size:1rem;">→</span>
+      <div style="display:flex; align-items:center; gap:0.5rem;">
+        <label class="field-label" for="radix-to" style="margin:0; white-space:nowrap">出力</label>
+        <select id="radix-to" style="border:1px solid #d1d5db; border-radius:6px; padding:0.4rem 0.6rem; font-size:0.85rem; color:#1f2937; background:#fff; outline:none; cursor:pointer;">
+          <option value="2">2進数</option>
+          <option value="8">8進数</option>
+          <option value="10">10進数</option>
+          <option value="16" selected>16進数</option>
+        </select>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.5rem;">
+        <label class="field-label" for="radix-digits" style="margin:0; white-space:nowrap">出力桁数</label>
+        <input id="radix-digits" type="number" min="1" placeholder="空=自動"
+          style="border:1px solid #d1d5db; border-radius:6px; padding:0.4rem 0.6rem; font-size:0.85rem; color:#1f2937; width:100px; outline:none;">
+      </div>
+      <button class="btn btn-ghost" onclick="radixClear()">Clear</button>
+    </div>
+    <div class="err-line" id="radix-err"></div>
+    <div class="field-label">出力</div>
+    <div class="output-wrap">
+      <textarea id="radix-out" readonly placeholder="結果がここに表示されます…"></textarea>
+      <button class="copy-btn" onclick="copyOut('radix')">Copy</button>
     </div>
   </div>
 
@@ -911,6 +951,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('time-in').addEventListener('input', timeTransform);
   document.getElementById('time-offset').addEventListener('input', timeTransform);
   document.getElementById('time-midnight').addEventListener('change', timeTransform);
+  ['radix-in', 'radix-from', 'radix-to', 'radix-digits'].forEach(id => {
+    document.getElementById(id).addEventListener('input', radixTransform);
+  });
 });
 
 /* ═══════════════════════════════════════════
@@ -975,6 +1018,59 @@ function timeClear() {
   document.getElementById('time-out').value = '';
   document.getElementById('time-offset').value = '';
   document.getElementById('time-err').textContent = '';
+}
+
+/* ═══════════════════════════════════════════
+   Radix conversion  (2 / 8 / 10 / 16)
+═══════════════════════════════════════════ */
+
+const RADIX_VALID = {
+  2:  /^[01]+$/,
+  8:  /^[0-7]+$/,
+  10: /^\d+$/,
+  16: /^[0-9a-fA-F]+$/i
+};
+
+function radixTransform() {
+  const input     = document.getElementById('radix-in').value;
+  const fromRadix = parseInt(document.getElementById('radix-from').value, 10);
+  const toRadix   = parseInt(document.getElementById('radix-to').value,   10);
+  const digitsStr = document.getElementById('radix-digits').value.trim();
+  const padWidth  = digitsStr === '' ? 0 : Math.max(0, parseInt(digitsStr, 10) || 0);
+  const errEl     = document.getElementById('radix-err');
+  const outEl     = document.getElementById('radix-out');
+
+  const lines   = input.split('\n');
+  const results = [];
+  let hasError  = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed === '') { results.push(''); continue; }
+
+    const neg = trimmed.startsWith('-');
+    const abs = neg ? trimmed.slice(1) : trimmed;
+
+    if (abs === '' || !RADIX_VALID[fromRadix].test(abs)) {
+      results.push('[エラー: "' + trimmed + '" は ' + fromRadix + '進数として無効]');
+      hasError = true;
+      continue;
+    }
+
+    const num    = parseInt(abs, fromRadix);
+    let   result = num.toString(toRadix).toUpperCase();
+    if (padWidth > 0) result = result.padStart(padWidth, '0');
+    results.push(neg ? '-' + result : result);
+  }
+
+  errEl.textContent = hasError ? '一部の行に変換できない値があります' : '';
+  outEl.value = results.join('\n');
+}
+
+function radixClear() {
+  document.getElementById('radix-in').value  = '';
+  document.getElementById('radix-out').value = '';
+  document.getElementById('radix-err').textContent = '';
 }
 
 /* ═══════════════════════════════════════════
