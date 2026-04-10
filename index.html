@@ -312,6 +312,7 @@ tr.hunk-sep td {
   <button class="tab-btn"        onclick="switchTab('hash',   this)">Hash</button>
   <button class="tab-btn"        onclick="switchTab('case',   this)">Case</button>
   <button class="tab-btn"        onclick="switchTab('diff',   this)">Diff</button>
+  <button class="tab-btn"        onclick="switchTab('time',   this)">Time</button>
 </nav>
 
 <main>
@@ -455,6 +456,30 @@ tr.hunk-sep td {
     <div class="diff-stats" id="diff-stats" style="display:none"></div>
     <div class="diff-output" id="diff-output">
       <div class="diff-empty">テキストを入力すると差分がリアルタイムで表示されます</div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════ Time ═══════════ -->
+  <div id="panel-time" class="tab-panel">
+    <div class="field-label">入力</div>
+    <textarea id="time-in" placeholder="HH:MM:SS を含むテキストを貼り付け…"></textarea>
+    <div class="btn-row" style="align-items:center; gap:1rem; flex-wrap:wrap; margin:0.625rem 0;">
+      <div style="display:flex; align-items:center; gap:0.5rem;">
+        <label class="field-label" for="time-offset" style="margin:0; white-space:nowrap">オフセット</label>
+        <input id="time-offset" type="text" placeholder="例: 3600 または 01:00:00"
+          style="border:1px solid #d1d5db; border-radius:6px; padding:0.4rem 0.75rem; font-size:0.85rem; color:#1f2937; font-family:'Courier New',Courier,monospace; width:200px; outline:none;">
+      </div>
+      <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.875rem; color:#374151; cursor:pointer;">
+        <input type="checkbox" id="time-midnight"> 日付またぎを考慮（0〜11時 → 24〜35時）
+      </label>
+      <button class="btn btn-ghost" onclick="timeClear()">Clear</button>
+    </div>
+    <div class="err-line" id="time-err"></div>
+    <div class="field-label">出力</div>
+    <div class="output-wrap">
+      <textarea id="time-out" readonly placeholder="結果がここに表示されます…"></textarea>
+      <button class="copy-btn" onclick="copyOut('time')">Copy</button>
     </div>
   </div>
 
@@ -883,7 +908,74 @@ function diffSwap() {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('diff-textA').addEventListener('input', diffRender);
   document.getElementById('diff-textB').addEventListener('input', diffRender);
+  document.getElementById('time-in').addEventListener('input', timeTransform);
+  document.getElementById('time-offset').addEventListener('input', timeTransform);
+  document.getElementById('time-midnight').addEventListener('change', timeTransform);
 });
+
+/* ═══════════════════════════════════════════
+   Time offset conversion
+═══════════════════════════════════════════ */
+
+/** オフセット文字列を秒数に変換。無効な場合は null を返す */
+function parseTimeOffset(str) {
+  str = str.trim();
+  if (str === '') return 0;
+  const hmsMatch = str.match(/^(-?)(\d+):(\d{2}):(\d{2})$/);
+  if (hmsMatch) {
+    const sign = hmsMatch[1] === '-' ? -1 : 1;
+    const m = parseInt(hmsMatch[3], 10), s = parseInt(hmsMatch[4], 10);
+    if (m > 59 || s > 59) return null;
+    return sign * (parseInt(hmsMatch[2], 10) * 3600 + m * 60 + s);
+  }
+  if (/^-?\d+$/.test(str)) return parseInt(str, 10);
+  return null;
+}
+
+/** 秒数を HH:MM:SS 文字列に変換（時は 2 桁以上） */
+function secondsToHMS(totalSec) {
+  const neg = totalSec < 0;
+  const abs = Math.abs(totalSec);
+  const h = Math.floor(abs / 3600);
+  const m = Math.floor((abs % 3600) / 60);
+  const s = abs % 60;
+  const p = n => String(n).padStart(2, '0');
+  return (neg ? '-' : '') + p(h) + ':' + p(m) + ':' + p(s);
+}
+
+function timeTransform() {
+  const input = document.getElementById('time-in').value;
+  const offsetStr = document.getElementById('time-offset').value;
+  const midnight = document.getElementById('time-midnight').checked;
+  const errEl = document.getElementById('time-err');
+  const outEl = document.getElementById('time-out');
+
+  const offset = parseTimeOffset(offsetStr);
+  if (offset === null) {
+    errEl.textContent = '無効なオフセット形式です（例: 3600 または 01:00:00）';
+    outEl.value = '';
+    return;
+  }
+  errEl.textContent = '';
+
+  const result = input.replace(/\b(\d{1,2}):(\d{2}):(\d{2})\b/g, (match, hh, mm, ss) => {
+    const h = parseInt(hh, 10), m = parseInt(mm, 10), s = parseInt(ss, 10);
+    if (m > 59 || s > 59) return match;
+    let totalSec = h * 3600 + m * 60 + s;
+    if (midnight && h < 12) totalSec += 24 * 3600;
+    totalSec += offset;
+    return secondsToHMS(totalSec);
+  });
+
+  outEl.value = result;
+}
+
+function timeClear() {
+  document.getElementById('time-in').value = '';
+  document.getElementById('time-out').value = '';
+  document.getElementById('time-offset').value = '';
+  document.getElementById('time-err').textContent = '';
+}
 
 /* ═══════════════════════════════════════════
    Case conversion
