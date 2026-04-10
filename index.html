@@ -295,6 +295,20 @@ tr.hunk-sep td {
   .diff-input-grid { grid-template-columns: 1fr; }
   .diff-view-toggle { margin-left: 0; }
 }
+
+/* ── Mode select ── */
+.mode-select {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: #1f2937;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.mode-select:focus { border-color: #7c3aed; }
 </style>
 </head>
 <body>
@@ -322,11 +336,13 @@ tr.hunk-sep td {
   <div id="panel-base64" class="tab-panel active">
     <div class="field-label">入力</div>
     <textarea id="base64-in" placeholder="テキストまたは Base64 文字列を貼り付け…"></textarea>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="base64Encode()">Encode →</button>
-      <button class="btn btn-primary" onclick="base64Decode()">← Decode</button>
-      <button class="btn btn-sub"     onclick="swap('base64')">↑↓ Swap</button>
-      <button class="btn btn-ghost"   onclick="clear_('base64')">Clear</button>
+    <div class="btn-row" style="align-items:center;">
+      <select id="base64-mode" class="mode-select">
+        <option value="encode">Encode →</option>
+        <option value="decode">← Decode</option>
+      </select>
+      <button class="btn btn-sub"   onclick="swap('base64')">↑↓ Swap</button>
+      <button class="btn btn-ghost" onclick="clear_('base64')">Clear</button>
     </div>
     <div class="err-line" id="base64-err"></div>
     <div class="field-label">出力</div>
@@ -340,11 +356,13 @@ tr.hunk-sep td {
   <div id="panel-url" class="tab-panel">
     <div class="field-label">入力</div>
     <textarea id="url-in" placeholder="テキストまたは URL エンコード済み文字列を貼り付け…"></textarea>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="urlEncode()">Encode →</button>
-      <button class="btn btn-primary" onclick="urlDecode()">← Decode</button>
-      <button class="btn btn-sub"     onclick="swap('url')">↑↓ Swap</button>
-      <button class="btn btn-ghost"   onclick="clear_('url')">Clear</button>
+    <div class="btn-row" style="align-items:center;">
+      <select id="url-mode" class="mode-select">
+        <option value="encode">Encode →</option>
+        <option value="decode">← Decode</option>
+      </select>
+      <button class="btn btn-sub"   onclick="swap('url')">↑↓ Swap</button>
+      <button class="btn btn-ghost" onclick="clear_('url')">Clear</button>
     </div>
     <div class="err-line" id="url-err"></div>
     <div class="field-label">出力</div>
@@ -358,11 +376,13 @@ tr.hunk-sep td {
   <div id="panel-html" class="tab-panel">
     <div class="field-label">入力</div>
     <textarea id="html-in" placeholder="テキストまたは HTML エンティティ文字列を貼り付け…"></textarea>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="htmlEncode()">Encode →</button>
-      <button class="btn btn-primary" onclick="htmlDecode()">← Decode</button>
-      <button class="btn btn-sub"     onclick="swap('html')">↑↓ Swap</button>
-      <button class="btn btn-ghost"   onclick="clear_('html')">Clear</button>
+    <div class="btn-row" style="align-items:center;">
+      <select id="html-mode" class="mode-select">
+        <option value="encode">Encode →</option>
+        <option value="decode">← Decode</option>
+      </select>
+      <button class="btn btn-sub"   onclick="swap('html')">↑↓ Swap</button>
+      <button class="btn btn-ghost" onclick="clear_('html')">Clear</button>
     </div>
     <div class="err-line" id="html-err"></div>
     <div class="field-label">出力</div>
@@ -376,11 +396,13 @@ tr.hunk-sep td {
   <div id="panel-unicode" class="tab-panel">
     <div class="field-label">入力</div>
     <textarea id="unicode-in" placeholder="テキストまたは \uXXXX / \u{XXXXX} 形式の文字列を貼り付け…"></textarea>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="unicodeEscape()">Escape →</button>
-      <button class="btn btn-primary" onclick="unicodeUnescape()">← Unescape</button>
-      <button class="btn btn-sub"     onclick="swap('unicode')">↑↓ Swap</button>
-      <button class="btn btn-ghost"   onclick="clear_('unicode')">Clear</button>
+    <div class="btn-row" style="align-items:center;">
+      <select id="unicode-mode" class="mode-select">
+        <option value="escape">Escape →</option>
+        <option value="unescape">← Unescape</option>
+      </select>
+      <button class="btn btn-sub"   onclick="swap('unicode')">↑↓ Swap</button>
+      <button class="btn btn-ghost" onclick="clear_('unicode')">Clear</button>
     </div>
     <div class="err-line" id="unicode-err"></div>
     <div class="field-label">出力</div>
@@ -394,12 +416,14 @@ tr.hunk-sep td {
   <div id="panel-hash" class="tab-panel">
     <div class="field-label">入力</div>
     <textarea id="hash-in" placeholder="ハッシュ化するテキストを貼り付け…"></textarea>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="computeHash('SHA-1')">SHA-1</button>
-      <button class="btn btn-primary" onclick="computeHash('SHA-256')">SHA-256</button>
-      <button class="btn btn-primary" onclick="computeHash('SHA-384')">SHA-384</button>
-      <button class="btn btn-primary" onclick="computeHash('SHA-512')">SHA-512</button>
-      <button class="btn btn-ghost"   onclick="clear_('hash')">Clear</button>
+    <div class="btn-row" style="align-items:center;">
+      <select id="hash-algo" class="mode-select">
+        <option value="SHA-1">SHA-1</option>
+        <option value="SHA-256" selected>SHA-256</option>
+        <option value="SHA-384">SHA-384</option>
+        <option value="SHA-512">SHA-512</option>
+      </select>
+      <button class="btn btn-ghost" onclick="clear_('hash')">Clear</button>
     </div>
     <p class="note-line">※ ハッシュは一方向変換です（復元不可）</p>
     <div class="err-line" id="hash-err"></div>
@@ -414,17 +438,19 @@ tr.hunk-sep td {
   <div id="panel-case" class="tab-panel">
     <div class="field-label">入力</div>
     <textarea id="case-in" placeholder="テキストを貼り付け…"></textarea>
-    <div class="case-grid">
-      <button class="btn btn-primary" onclick="convertCase('upper')">UPPER CASE</button>
-      <button class="btn btn-primary" onclick="convertCase('lower')">lower case</button>
-      <button class="btn btn-primary" onclick="convertCase('title')">Title Case</button>
-      <button class="btn btn-primary" onclick="convertCase('sentence')">Sentence case</button>
-      <button class="btn btn-primary" onclick="convertCase('camel')">camelCase</button>
-      <button class="btn btn-primary" onclick="convertCase('pascal')">PascalCase</button>
-      <button class="btn btn-primary" onclick="convertCase('snake')">snake_case</button>
-      <button class="btn btn-primary" onclick="convertCase('kebab')">kebab-case</button>
-      <button class="btn btn-primary" onclick="convertCase('constant')">CONSTANT_CASE</button>
-      <button class="btn btn-ghost"   onclick="clear_('case')">Clear</button>
+    <div class="btn-row" style="align-items:center;">
+      <select id="case-type" class="mode-select">
+        <option value="upper">UPPER CASE</option>
+        <option value="lower">lower case</option>
+        <option value="title">Title Case</option>
+        <option value="sentence">Sentence case</option>
+        <option value="camel">camelCase</option>
+        <option value="pascal">PascalCase</option>
+        <option value="snake">snake_case</option>
+        <option value="kebab">kebab-case</option>
+        <option value="constant">CONSTANT_CASE</option>
+      </select>
+      <button class="btn btn-ghost" onclick="clear_('case')">Clear</button>
     </div>
     <div class="err-line" id="case-err"></div>
     <div class="field-label">出力</div>
@@ -555,10 +581,16 @@ function setErr(ns, msg) {
 }
 
 function swap(ns) {
-  const a = $in(ns).value, b = $out(ns).value;
-  $in(ns).value  = b;
-  $out(ns).value = a;
+  const b = $out(ns).value;
+  if (!b) return;
+  $in(ns).value = b;
   $err(ns).textContent = '';
+  // 2択モードがあれば反転してから自動変換
+  const modeEl = document.getElementById(ns + '-mode');
+  if (modeEl && modeEl.options.length === 2) {
+    modeEl.selectedIndex = 1 - modeEl.selectedIndex;
+  }
+  autoTransform(ns);
 }
 
 function clear_(ns) {
@@ -589,6 +621,43 @@ function fallbackCopy(ns, cb) {
   try { document.execCommand('copy'); } catch (_) {}
   ta.setAttribute('readonly', '');
   cb();
+}
+
+/* ═══════════════════════════════════════════
+   Auto-transform dispatcher
+═══════════════════════════════════════════ */
+function autoTransform(ns) {
+  switch (ns) {
+    case 'base64':  base64Auto();  break;
+    case 'url':     urlAuto();     break;
+    case 'html':    htmlAuto();    break;
+    case 'unicode': unicodeAuto(); break;
+    case 'hash':    hashAuto();    break;
+    case 'case':    caseAuto();    break;
+  }
+}
+
+function base64Auto() {
+  document.getElementById('base64-mode').value === 'encode'
+    ? base64Encode() : base64Decode();
+}
+function urlAuto() {
+  document.getElementById('url-mode').value === 'encode'
+    ? urlEncode() : urlDecode();
+}
+function htmlAuto() {
+  document.getElementById('html-mode').value === 'encode'
+    ? htmlEncode() : htmlDecode();
+}
+function unicodeAuto() {
+  document.getElementById('unicode-mode').value === 'escape'
+    ? unicodeEscape() : unicodeUnescape();
+}
+async function hashAuto() {
+  await computeHash(document.getElementById('hash-algo').value);
+}
+function caseAuto() {
+  convertCase(document.getElementById('case-type').value);
 }
 
 /* ═══════════════════════════════════════════
@@ -946,11 +1015,26 @@ function diffSwap() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 既存タブ: 入力 & モード変更で自動変換
+  ['base64', 'url', 'html', 'unicode'].forEach(ns => {
+    $in(ns).addEventListener('input', () => autoTransform(ns));
+    document.getElementById(ns + '-mode').addEventListener('change', () => autoTransform(ns));
+  });
+  $in('hash').addEventListener('input', hashAuto);
+  document.getElementById('hash-algo').addEventListener('change', hashAuto);
+  $in('case').addEventListener('input', caseAuto);
+  document.getElementById('case-type').addEventListener('change', caseAuto);
+
+  // Diff
   document.getElementById('diff-textA').addEventListener('input', diffRender);
   document.getElementById('diff-textB').addEventListener('input', diffRender);
+
+  // Time
   document.getElementById('time-in').addEventListener('input', timeTransform);
   document.getElementById('time-offset').addEventListener('input', timeTransform);
   document.getElementById('time-midnight').addEventListener('change', timeTransform);
+
+  // Radix
   ['radix-in', 'radix-from', 'radix-to', 'radix-digits'].forEach(id => {
     document.getElementById(id).addEventListener('input', radixTransform);
   });
